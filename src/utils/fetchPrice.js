@@ -1,12 +1,14 @@
 const YAHOO_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 
+// Per-proxy timeout. Keeps a slow/dead proxy from stalling the whole chain.
+const PROXY_TIMEOUT_MS = 5000;
+
 // Ordered list of CORS relays. Free proxies come and go — if one starts
-// returning 403/5xx we automatically fall through to the next.
+// returning 403/5xx/timing out we automatically fall through to the next.
 const PROXIES = [
-  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
   (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
   (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url) => `https://thingproxy.freeboard.io/fetch/${url}`,
+  (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
 ];
 
 // Remember which proxy returned valid data last so we try it first next time.
@@ -57,14 +59,22 @@ function parseYahooPayload(data, ticker) {
 
 async function fetchViaProxy(proxyBuilder, ticker, signal) {
   const url = proxyBuilder(yahooUrl(ticker));
+  const timeoutCtrl = new AbortController();
+  const timer = setTimeout(() => timeoutCtrl.abort(), PROXY_TIMEOUT_MS);
+  const onOuterAbort = () => timeoutCtrl.abort();
+  signal?.addEventListener('abort', onOuterAbort);
   let res;
   try {
-    res = await fetch(url, { signal });
+    res = await fetch(url, { signal: timeoutCtrl.signal });
   } catch (networkErr) {
     if (signal?.aborted) throw networkErr;
+    // Own timeout fired or network-level failure — try next proxy.
     const e = new Error(networkErr.message || 'network');
     e.code = 'proxy_error';
     throw e;
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', onOuterAbort);
   }
   const text = await res.text();
   let data;

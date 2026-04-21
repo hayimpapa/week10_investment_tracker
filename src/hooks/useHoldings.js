@@ -59,7 +59,9 @@ export function useHoldings() {
           const idx = snapshot.findIndex((s) => s.id === h.id);
           if (idx === -1) return h;
           const result = results[idx];
-          if (result.status !== 'fulfilled') return h;
+          if (result.status !== 'fulfilled') {
+            return { ...h, priceStale: true };
+          }
           const data = result.value;
           return {
             ...h,
@@ -68,6 +70,7 @@ export function useHoldings() {
             lastPrice: data.price,
             currency: data.currency || h.currency || 'USD',
             lastUpdated: now,
+            priceStale: false,
           };
         })
       );
@@ -102,6 +105,7 @@ export function useHoldings() {
       lastPrice: data.price,
       currency: data.currency || 'USD',
       lastUpdated: now,
+      priceStale: false,
     };
     setHoldings((prev) => {
       const existingIdx = prev.findIndex((h) => h.ticker === holding.ticker);
@@ -115,6 +119,7 @@ export function useHoldings() {
           lastPrice: holding.lastPrice,
           currency: holding.currency,
           lastUpdated: now,
+          priceStale: false,
         };
         return merged;
       }
