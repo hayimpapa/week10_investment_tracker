@@ -1,11 +1,16 @@
 const YAHOO_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 
 // Per-proxy timeout. Keeps a slow/dead proxy from stalling the whole chain.
-const PROXY_TIMEOUT_MS = 5000;
+const PROXY_TIMEOUT_MS = 8000;
 
-// Ordered list of CORS relays. Free proxies come and go — if one starts
-// returning 403/5xx/timing out we automatically fall through to the next.
+// Ordered list of endpoints to try. First entry is our own Vercel serverless
+// function (api/yahoo.js) — served from the same origin, so no CORS issues and
+// no dependency on third-party relays. The rest are public CORS proxies kept
+// as fallbacks in case our function is unavailable. Free proxies come and go
+// (403/5xx/timeouts), so we automatically fall through to the next.
 const PROXIES = [
+  // eslint-disable-next-line no-unused-vars
+  (_url, ticker) => `/api/yahoo?ticker=${encodeURIComponent(ticker)}`,
   (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
   (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
   (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -58,7 +63,7 @@ function parseYahooPayload(data, ticker) {
 }
 
 async function fetchViaProxy(proxyBuilder, ticker, signal) {
-  const url = proxyBuilder(yahooUrl(ticker));
+  const url = proxyBuilder(yahooUrl(ticker), ticker);
   const timeoutCtrl = new AbortController();
   const timer = setTimeout(() => timeoutCtrl.abort(), PROXY_TIMEOUT_MS);
   const onOuterAbort = () => timeoutCtrl.abort();
