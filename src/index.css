@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-bg text-slate-100 font-sans antialiased;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(0, 214, 143, 0.06), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(0, 120, 255, 0.05), transparent 50%);
+    background-attachment: fixed;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-accent-green/60 ring-offset-2 ring-offset-bg;
+  }
+
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-bg-card border border-border rounded-xl;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+           font-medium text-sm transition-colors duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent-green text-bg hover:bg-accent-green/90;
+  }
+
+  .btn-ghost {
+    @apply btn bg-bg-elevated text-slate-200 border border-border hover:border-border-hover hover:bg-border/40;
+  }
+
+  .input {
+    @apply w-full bg-bg-elevated border border-border rounded-lg px-3.5 py-2.5
+           text-slate-100 placeholder:text-slate-500
+           focus:border-accent-green/60 focus:outline-none
+           transition-colors duration-150;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
