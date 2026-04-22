@@ -1,21 +1,86 @@
+import { useState } from 'react';
 import AddHoldingForm from './components/AddHoldingForm.jsx';
 import HoldingRow from './components/HoldingRow.jsx';
 import PortfolioSummary from './components/PortfolioSummary.jsx';
+import AboutThisBuild from './components/AboutThisBuild.jsx';
 import { useHoldings } from './hooks/useHoldings.js';
 
+const LOGO_SRC =
+  'https://raw.githubusercontent.com/hayimpapa/week00-main-page/main/public/w52.png';
+
 export default function App() {
-  const {
-    holdings,
-    isRefreshing,
-    lastRefreshed,
-    addHolding,
-    removeHolding,
-    refreshAll,
-  } = useHoldings();
+  const [activeTab, setActiveTab] = useState('tracker');
+  const tracker = useHoldings();
 
   return (
-    <div className="min-h-screen">
-      <header className="max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-4">
+    <div className="h-screen flex flex-col">
+      <nav className="shrink-0 sticky top-0 z-20 bg-bg-elevated/95 backdrop-blur border-b border-border">
+        <div className="max-w-2xl mx-auto px-3 sm:px-6 flex items-center gap-2 sm:gap-4 h-14">
+          <a
+            href="https://52-app.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="52 Apps in 52 Weeks"
+            className="shrink-0 p-1 rounded-md hover:opacity-80 transition-opacity"
+          >
+            <img
+              src={LOGO_SRC}
+              alt="52 Apps Logo"
+              className="h-[34px] w-auto rounded-md block"
+            />
+          </a>
+          <div className="flex-1 flex items-center gap-1 overflow-x-auto -mx-1 px-1">
+            <TabButton
+              active={activeTab === 'tracker'}
+              onClick={() => setActiveTab('tracker')}
+            >
+              Investment Tracker
+            </TabButton>
+            <TabButton
+              active={activeTab === 'about'}
+              onClick={() => setActiveTab('about')}
+            >
+              About This Build
+            </TabButton>
+          </div>
+        </div>
+      </nav>
+
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === 'tracker' ? (
+          <TrackerView {...tracker} />
+        ) : (
+          <AboutThisBuild />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TabButton({ active, onClick, children }) {
+  const base =
+    'shrink-0 whitespace-nowrap text-sm font-medium px-3 sm:px-4 py-2 rounded-t-md border-b-2 transition-colors duration-150';
+  const cls = active
+    ? `${base} text-slate-100 bg-bg-card border-accent-green`
+    : `${base} text-slate-400 hover:text-slate-100 border-transparent hover:bg-bg-card/40`;
+  return (
+    <button type="button" onClick={onClick} className={cls}>
+      {children}
+    </button>
+  );
+}
+
+function TrackerView({
+  holdings,
+  isRefreshing,
+  lastRefreshed,
+  addHolding,
+  removeHolding,
+  refreshAll,
+}) {
+  return (
+    <>
+      <header className="max-w-2xl mx-auto px-4 sm:px-6 pt-6 pb-4">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-md bg-accent-green/10 border border-accent-green/30 flex items-center justify-center">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -60,7 +125,7 @@ export default function App() {
           Prices via Yahoo Finance · stored locally in your browser
         </p>
       </footer>
-    </div>
+    </>
   );
 }
 
