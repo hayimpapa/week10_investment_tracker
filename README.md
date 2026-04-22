@@ -23,8 +23,8 @@ _Screenshot placeholder — add a screenshot of the running app here._
 - [React 18](https://react.dev) + [Vite 5](https://vitejs.dev)
 - [Tailwind CSS 3](https://tailwindcss.com)
 - Yahoo Finance unofficial chart API (`query1.finance.yahoo.com/v8/finance/chart`)
-- [corsproxy.io](https://corsproxy.io) as a CORS-friendly relay
-- No backend, no API keys, no build-time secrets
+- A tiny Vercel serverless function (`api/yahoo.js`) proxies Yahoo from the same origin, with public CORS relays (codetabs, corsproxy.io, allorigins) as automatic fallbacks
+- No API keys, no build-time secrets
 
 ## Getting started
 
@@ -49,7 +49,7 @@ This repo includes a `vercel.json` configured for Vite. Just import the repo int
 ## How it works
 
 1. On load, the app reads the array stored under the `investment_tracker_holdings` key in `localStorage` and renders it immediately (so you see last-known values instantly).
-2. In the background, it re-fetches fresh prices for every holding via the Yahoo Finance chart endpoint, going through `corsproxy.io` to avoid browser CORS blocks.
+2. In the background, it re-fetches fresh prices for every holding via the Yahoo Finance chart endpoint. Requests go through the same-origin serverless function at `/api/yahoo` first and automatically fall through to public CORS relays if that's unavailable.
 3. When you add a ticker, the app tries the symbol as entered first. If that returns nothing and the symbol has no dot, it retries with `.AX` appended — so `VAS` resolves to `VAS.AX` on the ASX automatically.
 4. Every add/remove/refresh writes back to `localStorage`, so your portfolio is always up to date on reload.
 
@@ -75,7 +75,7 @@ Stored under the key `investment_tracker_holdings` as a JSON array:
 
 - **Unofficial API.** Yahoo Finance's chart endpoint is public but not officially documented. It may rate-limit, break, or disappear without notice. If it's unreliable in your region, try the app on a different network or swap in another data source.
 - **Prices may be delayed.** Retail price feeds on Yahoo are typically 15–20 minutes delayed and may not update outside market hours.
-- **CORS proxy dependency.** The free `corsproxy.io` relay is used to reach Yahoo from the browser. If it's down or slow, price lookups will fail.
+- **Proxy dependency.** When the Vercel serverless function isn't available (e.g. running `vite preview` locally), the app falls back to free public CORS relays. Those come and go, so price lookups may fail until one of them responds.
 - **Local-only storage.** Holdings are tied to your browser profile on a single device. Clearing site data deletes your portfolio. There is no sync.
 - **No currency conversion.** Totals are grouped by native currency — USD holdings sum separately from AUD holdings.
 
