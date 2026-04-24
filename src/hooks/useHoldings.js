@@ -47,16 +47,18 @@ export function useHoldings() {
 
   const refreshAll = useCallback(async () => {
     const snapshot = holdingsRef.current;
-    if (snapshot.length === 0) return;
+    const refreshable = snapshot.filter((h) => !h.manualEntry);
+    if (refreshable.length === 0) return;
     setIsRefreshing(true);
     try {
       const results = await Promise.allSettled(
-        snapshot.map((h) => fetchPrice(h.ticker))
+        refreshable.map((h) => fetchPrice(h.ticker))
       );
       const now = new Date().toISOString();
       setHoldings((prev) =>
         prev.map((h) => {
-          const idx = snapshot.findIndex((s) => s.id === h.id);
+          if (h.manualEntry) return h;
+          const idx = refreshable.findIndex((s) => s.id === h.id);
           if (idx === -1) return h;
           const result = results[idx];
           if (result.status !== 'fulfilled') {
@@ -108,7 +110,9 @@ export function useHoldings() {
       priceStale: false,
     };
     setHoldings((prev) => {
-      const existingIdx = prev.findIndex((h) => h.ticker === holding.ticker);
+      const existingIdx = prev.findIndex(
+        (h) => !h.manualEntry && h.ticker === holding.ticker
+      );
       if (existingIdx !== -1) {
         const merged = [...prev];
         const existing = merged[existingIdx];
@@ -129,6 +133,39 @@ export function useHoldings() {
     return holding;
   }, []);
 
+  const addManualHolding = useCallback(
+    async (rawTicker, rawDescription, rawQuantity, rawUnitValue, rawCurrency) => {
+      const ticker = String(rawTicker || '').trim().toUpperCase();
+      const description = String(rawDescription || '').trim();
+      const quantity = Number(rawQuantity);
+      const unitValue = Number(rawUnitValue);
+      const currency =
+        String(rawCurrency || '').trim().toUpperCase() || 'USD';
+      if (!ticker) throw new Error('Enter a ticker symbol');
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw new Error('Enter a quantity greater than zero');
+      }
+      if (!Number.isFinite(unitValue) || unitValue < 0) {
+        throw new Error('Enter a unit value of zero or more');
+      }
+      const now = new Date().toISOString();
+      const holding = {
+        id: newId(),
+        ticker,
+        name: description,
+        quantity,
+        lastPrice: unitValue,
+        currency,
+        lastUpdated: now,
+        priceStale: false,
+        manualEntry: true,
+      };
+      setHoldings((prev) => [...prev, holding]);
+      return holding;
+    },
+    []
+  );
+
   const removeHolding = useCallback((id) => {
     setHoldings((prev) => prev.filter((h) => h.id !== id));
   }, []);
@@ -138,6 +175,7 @@ export function useHoldings() {
     isRefreshing,
     lastRefreshed,
     addHolding,
+    addManualHolding,
     removeHolding,
     refreshAll,
   };

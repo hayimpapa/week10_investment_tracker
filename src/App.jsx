@@ -75,6 +75,7 @@ function TrackerView({
   isRefreshing,
   lastRefreshed,
   addHolding,
+  addManualHolding,
   removeHolding,
   refreshAll,
 }) {
@@ -107,7 +108,7 @@ function TrackerView({
           onRefresh={refreshAll}
         />
 
-        <AddHoldingForm onAdd={addHolding} />
+        <AddHoldingForm onAdd={addHolding} onAddManual={addManualHolding} />
 
         {holdings.length === 0 ? (
           <EmptyState />
