@@ -1,10 +1,20 @@
 import { formatCurrency, formatQuantity } from '../utils/format.js';
 
 export default function HoldingRow({ holding, onRemove }) {
-  const { id, ticker, name, quantity, lastPrice, currency, priceStale } = holding;
+  const {
+    id,
+    ticker,
+    name,
+    quantity,
+    lastPrice,
+    currency,
+    priceStale,
+    manualEntry,
+  } = holding;
   const total = lastPrice != null ? Number(quantity) * Number(lastPrice) : null;
-  const priceClass = priceStale ? 'text-slate-500' : 'text-slate-200';
-  const totalClass = priceStale ? 'text-slate-400' : 'text-slate-50';
+  const showStale = priceStale && !manualEntry;
+  const priceClass = showStale ? 'text-slate-500' : 'text-slate-200';
+  const totalClass = showStale ? 'text-slate-400' : 'text-slate-50';
 
   return (
     <li className="card p-4 animate-fade-in transition-colors hover:border-border-hover">
@@ -17,7 +27,15 @@ export default function HoldingRow({ holding, onRemove }) {
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 border border-border rounded px-1.5 py-0.5">
               {currency || 'USD'}
             </span>
-            {priceStale && (
+            {manualEntry && (
+              <span
+                className="text-[10px] font-medium uppercase tracking-wider text-slate-300 border border-border-hover bg-bg-elevated rounded px-1.5 py-0.5"
+                title="Manual entry — not refreshed from any price source"
+              >
+                Manual
+              </span>
+            )}
+            {showStale && (
               <span
                 className="text-[10px] font-medium uppercase tracking-wider text-accent-amber border border-accent-amber/40 bg-accent-amber/10 rounded px-1.5 py-0.5"
                 title="Could not refresh — showing last known price"
